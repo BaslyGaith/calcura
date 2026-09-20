@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.calcura.app.BuildConfig
 import com.calcura.app.core.calculator.AngleMode
@@ -58,7 +59,8 @@ fun SettingsScreen(
                 label = "Theme",
                 options = ThemeMode.entries,
                 selected = settings.themeMode,
-                onSelected = onThemeModeChange
+                onSelected = onThemeModeChange,
+                testTag = "themeDropdown"
             )
 
             SectionLabel("Calculation")
@@ -66,7 +68,8 @@ fun SettingsScreen(
                 label = "Default angle mode",
                 options = AngleMode.entries,
                 selected = settings.angleMode,
-                onSelected = onAngleModeChange
+                onSelected = onAngleModeChange,
+                testTag = "angleModeDropdown"
             )
             ToggleRow("Scientific notation for large numbers", settings.useScientificNotationForLargeNumbers, onScientificNotationChange)
 
@@ -99,11 +102,17 @@ private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean
 }
 
 @Composable
-private fun <T> DropdownSetting(label: String, options: List<T>, selected: T, onSelected: (T) -> Unit) {
+private fun <T> DropdownSetting(
+    label: String,
+    options: List<T>,
+    selected: T,
+    onSelected: (T) -> Unit,
+    testTag: String
+) {
     var expanded by remember { mutableStateOf(false) }
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(label, modifier = Modifier.weight(1f))
-        Button(onClick = { expanded = true }) { Text(selected.toString()) }
+        Button(onClick = { expanded = true }, modifier = Modifier.testTag(testTag)) { Text(selected.toString()) }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
                 DropdownMenuItem(text = { Text(option.toString()) }, onClick = {

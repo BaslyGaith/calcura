@@ -23,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
@@ -85,14 +86,18 @@ fun CalculatorScreen(
                     text = uiState.expression.ifBlank { " " },
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.End,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("expression")
                 )
                 Text(
                     text = uiState.errorMessage ?: uiState.display,
                     style = MaterialTheme.typography.displayLarge,
                     textAlign = TextAlign.End,
                     color = if (uiState.errorMessage != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("display")
                 )
             }
 
