@@ -49,6 +49,12 @@ MIT — see `LICENSE`.
 
 ## Screenshots
 
-Not yet captured — requires running the app on a device/emulator, which wasn't available in
-the environment this project was built in. Capture and add screenshots here before a store
-listing.
+Captured on a Pixel 6 / Android 14 emulator:
+
+| Main calculator | Scientific functions | Result |
+|---|---|---|
+| ![](docs/screenshots/01_main_calculator.png) | ![](docs/screenshots/02_scientific_functions.png) | ![](docs/screenshots/03_calculation_result.png) |
+
+| History | Settings | Dark mode |
+|---|---|---|
+| ![](docs/screenshots/04_history.png) | ![](docs/screenshots/05_settings.png) | ![](docs/screenshots/06_dark_mode.png) |
