@@ -115,7 +115,7 @@ fun CalculatorScreen(
             if (uiState.isScientificPad) {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(4),
-                    modifier = Modifier.height(160.dp)
+                    modifier = Modifier.height(200.dp)
                 ) {
                     items(scientificKeys) { key ->
                         CalcKey(label = key.trimEnd('('), onClick = { onInput(key) })

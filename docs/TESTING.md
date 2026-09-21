@@ -22,13 +22,18 @@ Status: **green** — verified in this environment.
 basic arithmetic, scientific function tap, clear, delete, history navigation, settings
 navigation, theme switch, and angle mode switch.
 
-These require a connected device or emulator and **cannot execute in this headless
-environment** (see `docs/ENVIRONMENT.md` — no emulator/device available). They are written
-and ready to run with:
+Run with:
 
 ```
 ./gradlew connectedDebugAndroidTest
 ```
+
+Status: **green** — all 10 tests passing on a `Calcura_Test` (Pixel 6, API 34) emulator,
+verified on 2026-09-21. The display and expression `Text` composables in `CalculatorScreen.kt`
+carry `testTag("display")` / `testTag("expression")`, and the settings dropdowns carry
+`testTag("themeDropdown")` / `testTag("angleModeDropdown")`, specifically so these tests can
+target them unambiguously (a plain `onNodeWithText("0")` would otherwise match both a keypad
+button and the display showing the same digit).
 
 ## Static analysis
 
