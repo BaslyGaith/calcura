@@ -1,0 +1,76 @@
+"use client";
+import Link from "next/link";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { startQuiz, submitQuiz } from "@/app/actions/games";
+import { useT } from "@/lib/i18n/client";
+
+type Q = { id: number; q: string; options: string[] };
+
+export function Quiz() {
+  const { t } = useT();
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [game, setGame] = useState<{ token: string; questions: Q[] } | null>(null);
+  const [i, setI] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [result, setResult] = useState<{ correct: number; total: number; points: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const begin = () => start(async () => {
+    setError(null); setResult(null); setAnswers({}); setI(0);
+    const r = await startQuiz();
+    if (r.ok) setGame({ token: r.token, questions: r.questions }); else setError(r.error);
+  });
+
+  const finish = () => start(async () => {
+    if (!game) return;
+    const r = await submitQuiz(game.token, Object.entries(answers).map(([id, choice]) => ({ id: Number(id), choice })));
+    if (r.ok) { setResult(r); setGame(null); router.refresh(); } else setError(r.error);
+  });
+
+  return (
+    <div className="card p-6">
+      <h1 className="h1 mb-4">🧠 {t("games.quiz")}</h1>
+      {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-red-700">{error}</p>}
+      {result && (
+        <div className="mb-4 rounded-xl bg-lime-50 p-4 text-center">
+          <p className="text-lg font-semibold">{t("games.correct", { c: result.correct, n: result.total })}</p>
+          <p className="text-2xl font-extrabold text-olive-600">{t("games.won", { n: result.points })}</p>
+        </div>
+      )}
+      {!game ? (
+        <div className="flex gap-2">
+          <button className="btn-primary" onClick={begin} disabled={pending}>{result ? t("games.again") : t("games.start")}</button>
+          <Link href="/games" className="btn-secondary">{t("games.backToGames")}</Link>
+        </div>
+      ) : (
+        <div>
+          <p className="text-sm text-stone-500">{t("games.question", { i: i + 1, n: game.questions.length })}</p>
+          <div className="mb-4 mt-1 h-2 rounded-full bg-stone-100"><div className="h-2 rounded-full bg-brand-500 transition-all" style={{ width: `${((i + 1) / game.questions.length) * 100}%` }} /></div>
+          <h2 className="mb-4 text-lg font-semibold">{game.questions[i].q}</h2>
+          <div className="grid gap-2">
+            {game.questions[i].options.map((o, k) => {
+              const qid = game.questions[i].id;
+              const selected = answers[qid] === k;
+              return (
+                <button key={k} className={`rounded-xl border p-3 text-left transition ${selected ? "border-brand-500 bg-brand-50 font-semibold" : "border-stone-200 hover:bg-stone-50"}`}
+                  onClick={() => { setAnswers((a) => ({ ...a, [qid]: k })); if (i < game.questions.length - 1) setTimeout(() => setI(i + 1), 250); }}>
+                  {o}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex justify-between">
+            <button className="btn-secondary" disabled={i === 0} onClick={() => setI(i - 1)}>←</button>
+            {i < game.questions.length - 1 ? (
+              <button className="btn-secondary" onClick={() => setI(i + 1)}>→</button>
+            ) : (
+              <button className="btn-primary" disabled={pending || Object.keys(answers).length < game.questions.length} onClick={finish}>{t("games.submit")}</button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

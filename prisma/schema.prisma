@@ -1,0 +1,210 @@
+// Bon Plan — schéma de données
+// SQLite en développement. Pour PostgreSQL : provider = "postgresql".
+// Les "enums" sont stockés en String pour rester compatibles SQLite.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// role: USER | MERCHANT | ADMIN — status: ACTIVE | BLOCKED
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER")
+  status       String   @default("ACTIVE")
+  blockReason  String?
+  phone        String?
+  points       Int      @default(0)
+  locale       String   @default("fr")
+  referralCode String   @unique
+  referredById String?
+  referredBy   User?    @relation("Referral", fields: [referredById], references: [id])
+  referrals    User[]   @relation("Referral")
+  createdAt    DateTime @default(now())
+
+  venues        Venue[]
+  subscriptions Subscription[]
+  vouchers      Voucher[]
+  gamePlays     GamePlay[]
+  reviews       Review[]
+  favorites     Favorite[]
+  transactions  PointTransaction[]
+}
+
+model Governorate {
+  id     String  @id @default(cuid())
+  code   String  @unique // ISO 3166-2, ex. TN-11
+  slug   String  @unique
+  nameFr String
+  nameEn String
+  nameAr String
+  lat    Float
+  lng    Float
+  venues Venue[]
+}
+
+/// type: CAFE | RESTAURANT — status: ACTIVE | BLOCKED | PENDING — source: OSM | MERCHANT | DEMO
+model Venue {
+  id            String      @id @default(cuid())
+  name          String
+  type          String
+  description   String?
+  cuisine       String?
+  address       String?
+  city          String?
+  phone         String?
+  website       String?
+  openingHours  String?
+  priceLevel    Int         @default(2) // 1 à 4
+  lat           Float
+  lng           Float
+  coverImage    String?
+  features      String? // liste séparée par des virgules : wifi,terrasse,parking,...
+  status        String      @default("ACTIVE")
+  blockReason   String?
+  source        String      @default("MERCHANT")
+  osmId         String?     @unique
+  featured      Boolean     @default(false)
+  governorateId String
+  governorate   Governorate @relation(fields: [governorateId], references: [id])
+  ownerId       String?
+  owner         User?       @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  photos    Photo[]
+  menuItems MenuItem[]
+  offers    Offer[]
+  reviews   Review[]
+  favorites Favorite[]
+
+  @@index([governorateId, type, status])
+}
+
+/// kind: MENU | PLACE
+model Photo {
+  id        String   @id @default(cuid())
+  venueId   String
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  url       String
+  kind      String
+  caption   String?
+  createdAt DateTime @default(now())
+}
+
+model MenuItem {
+  id          String  @id @default(cuid())
+  venueId     String
+  venue       Venue   @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  category    String
+  name        String
+  description String?
+  price       Float // en dinars tunisiens (TND)
+  available   Boolean @default(true)
+}
+
+/// Bon d'achat proposé par un commerce, échangeable contre des points.
+model Offer {
+  id          String    @id @default(cuid())
+  venueId     String
+  venue       Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  pointsCost  Int
+  valueTnd    Float?
+  stock       Int       @default(50)
+  active      Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  vouchers    Voucher[]
+}
+
+/// status: ISSUED | REDEEMED | EXPIRED | CANCELLED
+model Voucher {
+  id         String    @id @default(cuid())
+  code       String    @unique
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  offerId    String
+  offer      Offer     @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  status     String    @default("ISSUED")
+  pointsPaid Int
+  expiresAt  DateTime
+  redeemedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+/// plan: MONTHLY | YEARLY — status: PAID | UNPAID | CANCELLED
+model Subscription {
+  id         String    @id @default(cuid())
+  merchantId String
+  merchant   User      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  plan       String
+  amountTnd  Float
+  startsAt   DateTime
+  endsAt     DateTime
+  status     String    @default("UNPAID")
+  paidAt     DateTime?
+  note       String?
+  createdAt  DateTime  @default(now())
+}
+
+/// game: QUIZ | MEMORY | WHEEL
+model GamePlay {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game         String
+  score        Int
+  pointsEarned Int
+  createdAt    DateTime @default(now())
+
+  @@index([userId, game, createdAt])
+}
+
+model PointTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int // positif = gain, négatif = dépense
+  reason    String // GAME | VOUCHER | REVIEW | REFERRAL | ADMIN | SIGNUP | REFUND
+  detail    String?
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  venueId   String
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  rating    Int // 1 à 5
+  comment   String?
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, venueId])
+}
+
+model Favorite {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  venueId   String
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, venueId])
+}
+
+/// Paramètres configurables par l'administrateur (clé/valeur).
+model Setting {
+  key   String @id
+  value String
+}
