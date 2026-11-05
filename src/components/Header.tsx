@@ -12,6 +12,7 @@ export async function Header() {
     { href: "/explore", label: t("nav.explore") },
     { href: "/explore?view=map", label: t("nav.map") },
     { href: "/games", label: t("nav.games") },
+    { href: "/draws", label: t("nav.draws") },
     { href: "/rewards", label: t("nav.rewards") },
     { href: "/leaderboard", label: t("nav.leaderboard") },
   ];

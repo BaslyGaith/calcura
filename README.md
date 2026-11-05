@@ -12,7 +12,9 @@ Interface **en français** (par défaut) et **en anglais** (bouton FR / EN dans 
 - Vue **liste** ou **carte** (Leaflet + OpenStreetMap).
 - Fiche établissement : photos du menu (galerie plein écran), menu détaillé avec prix en DT, photos du lieu, carte, horaires, itinéraire Google Maps, appel, partage, favoris.
 - Avis et notes (points offerts pour un premier avis).
-- **Jeux** : Quiz Tunisie, Memory gourmand, Roue de la chance (1 tour par jour).
+- **Jeux** : Puzzle du menu, Quiz Tunisie, Memory gourmand, Roue de la chance (1 tour par jour). L'admin peut activer ou masquer chaque jeu.
+- **Puzzle du menu** : la photo du menu d'un café ou restaurant est découpée en 3×3 (facile) ou 4×4 (difficile, ×1,5 points) ; on touche deux pièces pour les échanger jusqu'à reconstituer la photo. Un puzzle terminé rapporte des points **et un ticket pour chaque tirage au sort en cours**. Le nom de l'établissement et un lien « Voir le menu » sont affichés pendant la partie (visibilité pour le commerçant ; les commerçants abonnés sont favorisés).
+- **Tirages au sort** (page « Tirages ») : on gagne des tickets en terminant des puzzles, ou on les achète avec des points si l'admin l'autorise. Plus on a de tickets, plus on a de chances. À la date de fin, le gagnant est tiré au sort (pondéré par les tickets, comptes bloqués exclus) ; le lot — par exemple **un repas pour 2** — arrive automatiquement dans « Mes bons d'achat » avec un code que le restaurant valide comme un bon normal.
 - **Quiz relié aux menus** : sur 5 questions, jusqu'à 3 (réglable) portent sur de vrais établissements — « Lequel de ces articles figure au menu de… ? », « Combien coûte… chez… ? », « Quel est l'article le moins cher de la catégorie… ? », « Dans quel gouvernorat se trouve… ? ». Chaque question affiche l'établissement avec un lien **« Voir le menu »** : le joueur consulte la fiche pour trouver la réponse, ce qui donne de la visibilité au café ou restaurant. Les établissements des commerçants abonnés apparaissent plus souvent (priorité réglable), et le récapitulatif de fin de partie liste les établissements découverts.
 - **Bons d'achat** : échange de points contre une offre, code unique `BP-XXXX-XXXX` à présenter au commerçant, annulation avec remboursement.
 - Mon espace : solde, bons, favoris, historique des points, **code de parrainage**.
@@ -31,13 +33,14 @@ Interface **en français** (par défaut) et **en anglais** (bouton FR / EN dans 
 - **Blocage automatique** des établissements quand l'abonnement n'est pas payé (délai de grâce réglable). Le déblocage est automatique dès que le paiement est enregistré ; les blocages manuels de l'admin ne sont jamais levés automatiquement.
 - **Établissements** : bloquer / débloquer, mettre à la une, rattacher un lieu importé à un commerçant, supprimer.
 - **Utilisateurs** : rôle, blocage, ajustement des points. **Avis** : modération.
+- **Tirages** : créer un tirage (lot, établissement qui l'offre, date du tirage, prix d'un ticket en points, maximum par joueur), tirer au sort immédiatement ou annuler. Les tirages arrivés à échéance sont effectués automatiquement.
 - **Paramètres** : prix des abonnements, parties par jour, points par jeu, points de parrainage, validité des bons…
 
 ### Nombre de vues
 Chaque fiche affiche son nombre de vues (👁), visible aussi sur les cartes de la liste ; la recherche peut trier par **« Les plus vus »**. Une vue = **un visiteur unique par jour** (compte utilisateur, ou identifiant anonyme en cookie pour les visiteurs non connectés). Les vues du propriétaire et des administrateurs, les robots et les préchargements de page ne sont pas comptés (la vue est enregistrée par le navigateur une fois la page affichée).
 
 ### Sécurité des jeux
-Les points sont toujours calculés **côté serveur** : réponses du quiz chiffrées dans un jeton (le navigateur ne peut pas les lire), durée du memory mesurée par le serveur, résultat de la roue tiré par le serveur, nombre de parties limité par jour. L'échange de points est atomique (pas de solde négatif ni de stock négatif).
+Les points sont toujours calculés **côté serveur**. Puzzle : le serveur rejoue tous les échanges à partir du mélange qu'il a signé et vérifie que la photo est reconstituée ; un puzzle terminé trop vite ne rapporte ni point ni ticket. Autres jeux : réponses du quiz chiffrées dans un jeton (le navigateur ne peut pas les lire), durée du memory mesurée par le serveur, résultat de la roue tiré par le serveur, nombre de parties limité par jour. L'échange de points est atomique (pas de solde négatif ni de stock négatif).
 
 ## Stack technique
 - [Next.js 14](https://nextjs.org) (App Router, Server Actions), React 18, TypeScript, Tailwind CSS
@@ -79,8 +82,8 @@ npm run import:osm -- --dry-run            # compter sans écrire
 - Les lieux OSM n'ont pas de photos : ce sont les commerçants qui ajoutent menus et photos depuis leur espace (l'admin rattache le lieu au compte du commerçant).
 - Les données de démonstration (`source = DEMO`) sont marquées « Démo » et peuvent être supprimées une fois l'import réel fait.
 
-## Abonnements : contrôle quotidien
-Le contrôle s'exécute automatiquement à chaque modification d'abonnement. Pour gérer les expirations, planifiez-le une fois par jour :
+## Tâche quotidienne : abonnements et tirages
+Le contrôle des abonnements s'exécute à chaque modification d'abonnement, et les tirages échus sont effectués à l'ouverture des pages « Tirages ». Pour ne rien rater (expirations, tirages sans visite), planifiez une fois par jour :
 
 ```bash
 npm run subscriptions:enforce

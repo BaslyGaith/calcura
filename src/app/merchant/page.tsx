@@ -78,8 +78,8 @@ export default async function MerchantPage() {
           {([
             [t("merchant.totalViews"), totalViews],
             [t("merchant.pageViews"), stats.totals.PAGE],
-            [t("merchant.quizShown"), stats.totals.QUIZ_SHOWN],
-            [t("merchant.quizClicks"), stats.totals.QUIZ_CLICK],
+            [t("merchant.quizShown"), stats.totals.GAME_SHOWN],
+            [t("merchant.quizClicks"), stats.totals.GAME_CLICK],
           ] as const).map(([label, n]) => (
             <div key={label} className="rounded-xl bg-stone-50 p-3"><dt className="text-xs text-stone-500">{label}</dt><dd className="text-2xl font-bold">{n}</dd></div>
           ))}
@@ -113,7 +113,7 @@ export default async function MerchantPage() {
                   <div className="font-semibold">{v.type === "CAFE" ? "☕" : "🍽️"} {v.name}</div>
                   <div className="text-xs text-stone-500">
                     {v.city ?? (locale === "en" ? v.governorate.nameEn : v.governorate.nameFr)} · {v._count.photos} 📷 · {v._count.menuItems} 🍴 · {v._count.offers} 🎁
-                    {" · 👁 "}{v.viewCount} · 🧠 {stats.perVenue.get(v.id)?.QUIZ_SHOWN ?? 0} / {stats.perVenue.get(v.id)?.QUIZ_CLICK ?? 0}
+                    {" · 👁 "}{v.viewCount} · 🎮 {stats.perVenue.get(v.id)?.GAME_SHOWN ?? 0} / {stats.perVenue.get(v.id)?.GAME_CLICK ?? 0}
                   </div>
                   {v.status === "BLOCKED" && <div className="text-xs font-semibold text-red-600">{t("merchant.venueBlocked", { reason: reasonLabel(v.blockReason) })}</div>}
                 </div>

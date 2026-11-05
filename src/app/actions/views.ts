@@ -7,7 +7,7 @@ import { isBot, recordView } from "@/lib/views";
 const VISITOR_COOKIE = "bp_vid";
 
 /** Appelée par la fiche établissement une fois affichée dans le navigateur (pas par les préchargements ni les robots). */
-export async function trackVenueView(venueId: string, fromQuiz: boolean) {
+export async function trackVenueView(venueId: string, fromGame: boolean) {
   if (isBot(headers().get("user-agent"))) return;
   const user = await getCurrentUser();
   const venue = await prisma.venue.findUnique({ where: { id: venueId }, select: { ownerId: true } });
@@ -25,5 +25,5 @@ export async function trackVenueView(venueId: string, fromQuiz: boolean) {
     visitorId = `anon:${visitorId}`;
   }
   await recordView(venueId, visitorId, "PAGE");
-  if (fromQuiz) await recordView(venueId, visitorId, "QUIZ_CLICK");
+  if (fromGame) await recordView(venueId, visitorId, "GAME_CLICK");
 }

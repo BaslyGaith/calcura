@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
-export type ViewSource = "PAGE" | "QUIZ_SHOWN" | "QUIZ_CLICK";
+export type ViewSource = "PAGE" | "GAME_SHOWN" | "GAME_CLICK";
 
 export function dayKey(d = new Date()) {
   return d.toISOString().slice(0, 10);
@@ -33,7 +33,7 @@ export async function viewStats(venueIds: string[], days = 30, now = new Date())
       })
     : [];
   const dayList = Array.from({ length: days }, (_, i) => dayKey(new Date(from.getTime() + i * 86400000)));
-  const empty = () => ({ PAGE: 0, QUIZ_SHOWN: 0, QUIZ_CLICK: 0 });
+  const empty = () => ({ PAGE: 0, GAME_SHOWN: 0, GAME_CLICK: 0 });
   const perVenue = new Map<string, Record<ViewSource, number>>(venueIds.map((id) => [id, empty()]));
   const perDay = new Map<string, number>(dayList.map((d) => [d, 0]));
   const totals = empty();

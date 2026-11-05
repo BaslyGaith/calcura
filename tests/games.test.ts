@@ -42,3 +42,57 @@ test("la roue renvoie un segment valide", () => {
   }
   assert.equal(Math.max(...wheelValues(100)), 100);
 });
+
+import { applySwaps, isSolved, minSwaps, scorePuzzle, shufflePuzzle } from "../src/lib/games";
+
+test("puzzle : mélange non résolu, toutes les pièces présentes", () => {
+  for (const size of [3, 4]) {
+    for (let k = 0; k < 50; k++) {
+      const p = shufflePuzzle(size);
+      assert.equal(p.length, size * size);
+      assert.equal(new Set(p).size, size * size);
+      assert.equal(isSolved(p), false);
+    }
+  }
+});
+
+test("puzzle : rejouer les échanges et compter le minimum", () => {
+  const p = [1, 0, 2, 3, 4, 5, 6, 8, 7];
+  assert.equal(minSwaps(p), 2);
+  const solved = applySwaps(p, [[0, 1], [7, 8]]);
+  assert.ok(solved && isSolved(solved));
+  assert.equal(applySwaps(p, [[0, 0]]), null);
+  assert.equal(applySwaps(p, [[0, 99]]), null);
+  // Résolution générique par sélection : toujours possible
+  const q = shufflePuzzle(4);
+  const swaps: [number, number][] = [];
+  const cur = [...q];
+  for (let i = 0; i < cur.length; i++) {
+    const j = cur.indexOf(i);
+    if (j !== i) { swaps.push([i, j]); [cur[i], cur[j]] = [cur[j], cur[i]]; }
+  }
+  assert.ok(isSolved(applySwaps(q, swaps)!));
+  assert.equal(swaps.length, minSwaps(q));
+});
+
+test("puzzle : points plafonnés, parties trop rapides refusées", () => {
+  assert.equal(scorePuzzle(3, 7, 7, 20, 30), 30);
+  assert.equal(scorePuzzle(4, 14, 14, 40, 30), 45);
+  assert.equal(scorePuzzle(3, 7, 7, 2, 30), 0);
+  assert.equal(scorePuzzle(3, 5, 7, 20, 30), 0);
+  assert.ok(scorePuzzle(3, 40, 7, 300, 30) >= 5);
+});
+
+import { pickWeighted } from "../src/lib/draws";
+
+test("tirage pondéré par le nombre de tickets", () => {
+  const entries = [{ id: "a", tickets: 1 }, { id: "b", tickets: 0 }, { id: "c", tickets: 3 }];
+  assert.equal(pickWeighted(entries, 0)?.id, "a");
+  assert.equal(pickWeighted(entries, 0.24)?.id, "a");
+  assert.equal(pickWeighted(entries, 0.25)?.id, "c");
+  assert.equal(pickWeighted(entries, 0.9999)?.id, "c");
+  assert.equal(pickWeighted([{ id: "x", tickets: 0 }], 0.5), null);
+  const counts: Record<string, number> = { a: 0, c: 0 };
+  for (let i = 0; i < 4000; i++) counts[pickWeighted(entries, Math.random())!.id]++;
+  assert.ok(counts.c > counts.a * 2, JSON.stringify(counts));
+});

@@ -4,8 +4,10 @@ import { prisma } from "@/lib/db";
 import { assertUser } from "@/lib/auth";
 import { addPoints } from "@/lib/points";
 import { getSettings } from "@/lib/settings";
-import { playsLeft } from "@/lib/game-limits";
-import { scoreMemory, scoreQuiz, spinWheel, wheelValues, type GameId } from "@/lib/games";
+import { isGameEnabled, playsLeft } from "@/lib/game-limits";
+import { applySwaps, isSolved, minSwaps, PUZZLE_SIZES, scoreMemory, scorePuzzle, scoreQuiz, shufflePuzzle, spinWheel, wheelValues, type GameId } from "@/lib/games";
+import { pickPuzzlePhoto } from "@/lib/puzzle-picker";
+import { grantTickets } from "@/lib/draws";
 import { buildQuiz } from "@/lib/quiz-builder";
 import { recordView } from "@/lib/views";
 import { decryptData, encryptData, signData, verifyData } from "@/lib/session";
@@ -17,16 +19,20 @@ async function guard(game: GameId): Promise<{ ok: true; userId: string } | Fail>
   const { t } = getT();
   let user;
   try { user = await assertUser(); } catch { return { ok: false, error: t("games.loginToPlay") }; }
+  if (!(await isGameEnabled(game))) return { ok: false, error: t("games.disabled") };
   if ((await playsLeft(user.id, game)) <= 0) return { ok: false, error: t("games.noPlaysLeft") };
   return { ok: true, userId: user.id };
 }
 
-async function record(userId: string, game: GameId, score: number, points: number) {
-  await prisma.$transaction(async (tx) => {
+async function record(userId: string, game: GameId, score: number, points: number, tickets = 0) {
+  const granted = await prisma.$transaction(async (tx) => {
     await tx.gamePlay.create({ data: { userId, game, score, pointsEarned: points } });
     await addPoints(userId, points, "GAME", game, tx);
+    return grantTickets(userId, tickets, tx);
   });
   revalidatePath("/games");
+  revalidatePath("/draws");
+  return granted;
 }
 
 // ---------- Quiz ----------
@@ -36,7 +42,7 @@ export async function startQuiz() {
   const { locale } = getT();
   const { questions, key } = await buildQuiz(locale);
   // Chaque établissement affiché dans le quiz gagne une impression (statistique de visibilité).
-  await Promise.all(questions.filter((q) => q.venue).map((q) => recordView(q.venue!.id, g.userId, "QUIZ_SHOWN")));
+  await Promise.all(questions.filter((q) => q.venue).map((q) => recordView(q.venue!.id, g.userId, "GAME_SHOWN")));
   // Jeton chiffré : contient la clé de correction, illisible côté client.
   const token = await encryptData({ uid: g.userId, game: "QUIZ", key }, 900);
   return { ok: true as const, token, questions };
@@ -86,4 +92,40 @@ export async function spin() {
   const index = spinWheel();
   await record(g.userId, "WHEEL", index, values[index]);
   return { ok: true as const, index, points: values[index], values };
+}
+
+// ---------- Puzzle photo de menu ----------
+export async function startPuzzle(size: number) {
+  const { t } = getT();
+  const g = await guard("PUZZLE");
+  if (!g.ok) return g;
+  const sz = (PUZZLE_SIZES as readonly number[]).includes(size) ? size : 3;
+  const photo = await pickPuzzlePhoto();
+  if (!photo) return { ok: false as const, error: t("games.puzzle.noPhoto") };
+  const perm = shufflePuzzle(sz);
+  await recordView(photo.venue.id, g.userId, "GAME_SHOWN");
+  // Jeton signé : le serveur rejouera les échanges à partir de ce mélange.
+  const token = await signData({ uid: g.userId, game: "PUZZLE", size: sz, perm, t0: Date.now(), venueId: photo.venue.id }, 3600);
+  return { ok: true as const, token, size: sz, perm, image: photo.url, venue: photo.venue };
+}
+
+export async function submitPuzzle(token: string, swaps: [number, number][]) {
+  const { t } = getT();
+  const data = await verifyData<{ uid: string; game: string; size: number; perm: number[]; t0: number }>(token);
+  const g = await guard("PUZZLE");
+  if (!g.ok) return g;
+  if (!data || data.game !== "PUZZLE" || data.uid !== g.userId || !Array.isArray(swaps) || swaps.length > 500) {
+    return { ok: false as const, error: t("common.error") };
+  }
+  // Un même jeton ne peut servir qu'une fois.
+  const reused = await prisma.gamePlay.count({ where: { userId: g.userId, game: "PUZZLE", createdAt: { gte: new Date(data.t0) } } });
+  if (reused > 0) return { ok: false as const, error: t("common.error") };
+  const final = applySwaps(data.perm, swaps);
+  if (!final || !isSolved(final)) return { ok: false as const, error: t("games.puzzle.notSolved") };
+  const seconds = Math.round((Date.now() - data.t0) / 1000); // mesuré côté serveur
+  const settings = await getSettings();
+  const points = scorePuzzle(data.size, swaps.length, minSwaps(data.perm), seconds, settings.puzzleMaxPoints);
+  const tickets = points > 0 ? settings.puzzleTicketsPerWin : 0;
+  const granted = await record(g.userId, "PUZZLE", swaps.length, points, tickets);
+  return { ok: true as const, points, seconds, moves: swaps.length, tickets: granted };
 }

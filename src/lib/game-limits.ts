@@ -1,7 +1,20 @@
 import { prisma } from "./db";
-import { getSettings } from "./settings";
+import { getSettings, type Settings } from "./settings";
 import { startOfToday } from "./points";
 import type { GameId } from "./games";
+
+const ENABLED_KEY: Record<GameId, keyof Settings> = {
+  PUZZLE: "puzzleEnabled",
+  QUIZ: "quizEnabled",
+  MEMORY: "memoryEnabled",
+  WHEEL: "wheelEnabled",
+};
+
+/** Un jeu peut être masqué par l'admin (Paramètres). */
+export async function isGameEnabled(game: GameId, settings?: Settings) {
+  const s = settings ?? (await getSettings());
+  return s[ENABLED_KEY[game]] !== 0;
+}
 
 /** Nombre de parties autorisées par jour : 1 pour la roue, réglable pour les autres. */
 export async function dailyLimit(game: GameId) {

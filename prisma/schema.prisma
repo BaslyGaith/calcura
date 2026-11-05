@@ -36,6 +36,8 @@ model User {
   reviews       Review[]
   favorites     Favorite[]
   transactions  PointTransaction[]
+  drawEntries   DrawEntry[]
+  drawsWon      Draw[]             @relation("DrawWinner")
 }
 
 model Governorate {
@@ -86,6 +88,7 @@ model Venue {
   reviews   Review[]
   favorites Favorite[]
   views     VenueView[]
+  draws     Draw[]
 
   @@index([governorateId, type, status])
 }
@@ -212,8 +215,8 @@ model Setting {
 }
 
 /// Statistiques de visibilité, dédoublonnées par visiteur, jour et source.
-/// source: PAGE (fiche consultée) | QUIZ_SHOWN (affiché dans une question du quiz)
-///       | QUIZ_CLICK (fiche ouverte depuis le quiz)
+/// source: PAGE (fiche consultée) | GAME_SHOWN (affiché dans un jeu : quiz, puzzle)
+///       | GAME_CLICK (fiche ouverte depuis un jeu)
 model VenueView {
   id        String   @id @default(cuid())
   venueId   String
@@ -225,4 +228,42 @@ model VenueView {
 
   @@unique([venueId, visitorId, day, source])
   @@index([venueId, source, day])
+}
+
+/// Tirage au sort (ex. « Gagnez un repas pour 2 »).
+/// status: OPEN | DRAWN | CANCELLED
+model Draw {
+  id                String      @id @default(cuid())
+  title             String
+  description       String?
+  prize             String // ex. « Un repas pour 2 personnes »
+  prizeValueTnd     Float?
+  venueId           String? // établissement qui offre le lot
+  venue             Venue?      @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  ticketCostPoints  Int         @default(0) // 0 = tickets uniquement gagnés en jouant
+  maxTicketsPerUser Int         @default(50)
+  startsAt          DateTime    @default(now())
+  endsAt            DateTime
+  status            String      @default("OPEN")
+  winnerId          String?
+  winner            User?       @relation("DrawWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  prizeVoucherId    String? // bon d'achat généré pour le gagnant
+  drawnAt           DateTime?
+  createdAt         DateTime    @default(now())
+  entries           DrawEntry[]
+
+  @@index([status, endsAt])
+}
+
+/// Tickets d'un utilisateur pour un tirage (gagnés au puzzle ou achetés avec des points).
+model DrawEntry {
+  id        String   @id @default(cuid())
+  drawId    String
+  draw      Draw     @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tickets   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([drawId, userId])
 }

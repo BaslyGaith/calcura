@@ -151,6 +151,18 @@ async function main() {
     created.push(v.id);
   }
 
+  // Tirage au sort de démonstration : un repas offert par un commerçant abonné.
+  await prisma.draw.deleteMany({ where: { description: { startsWith: "[Démo]" } } });
+  const marsa = await prisma.venue.findFirst({ where: { name: "Restaurant Bon Plan Marsa" } });
+  const drawEnd = new Date(now.getTime() + 30 * 86400000);
+  await prisma.draw.create({
+    data: {
+      title: "Grand tirage du mois", prize: "Un repas pour 2 personnes", prizeValueTnd: 80,
+      description: "[Démo] Terminez des puzzles pour gagner des tickets. Tirage automatique à la date de fin.",
+      venueId: marsa?.id, ticketCostPoints: 50, maxTicketsPerUser: 50, startsAt: now, endsAt: drawEnd,
+    },
+  });
+
   // Quelques avis de démonstration
   for (const [k, id] of created.slice(0, 40).entries()) {
     await prisma.review.create({ data: { userId: user.id, venueId: id, rating: (k % 3) + 3, comment: k % 2 ? "Très bon accueil, je recommande !" : "Bon rapport qualité-prix." } });

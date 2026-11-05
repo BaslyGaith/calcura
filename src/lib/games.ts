@@ -1,7 +1,7 @@
 // Contenu et règles des mini-jeux. Les points sont toujours calculés côté serveur.
 
-export type GameId = "QUIZ" | "MEMORY" | "WHEEL";
-export const GAMES: GameId[] = ["QUIZ", "MEMORY", "WHEEL"];
+export type GameId = "PUZZLE" | "QUIZ" | "MEMORY" | "WHEEL";
+export const GAMES: GameId[] = ["PUZZLE", "QUIZ", "MEMORY", "WHEEL"];
 
 export type QuizQuestion = {
   id: number;
@@ -118,4 +118,72 @@ export function spinWheel(rand = Math.random()): number {
     if (r < 0) return i;
   }
   return WHEEL_SEGMENTS.length - 1;
+}
+
+// ---------- Puzzle photo de menu ----------
+// La photo est découpée en size × size pièces mélangées ; le joueur échange deux pièces
+// à la fois. perm[position] = pièce affichée à cette position ; résolu quand perm[i] === i.
+
+export const PUZZLE_SIZES = [3, 4] as const;
+export type PuzzleSize = (typeof PUZZLE_SIZES)[number];
+
+/** Mélange aléatoire garanti différent de l'ordre résolu, sans pièce déjà bien placée si possible. */
+export function shufflePuzzle(size: number, rand: () => number = Math.random): number[] {
+  const n = size * size;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const p = Array.from({ length: n }, (_, i) => i);
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+    const placed = p.filter((v, i) => v === i).length;
+    if (placed <= 1) return p;
+  }
+  // Repli : décalage circulaire (aucune pièce à sa place).
+  return Array.from({ length: n }, (_, i) => (i + 1) % n);
+}
+
+export function isSolved(perm: number[]): boolean {
+  return perm.every((v, i) => v === i);
+}
+
+/** Rejoue une suite d'échanges ; renvoie null si un échange est invalide. */
+export function applySwaps(perm: number[], swaps: [number, number][]): number[] | null {
+  const p = [...perm];
+  for (const s of swaps) {
+    if (!Array.isArray(s) || s.length !== 2) return null;
+    const [a, b] = s;
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0 || a >= p.length || b >= p.length || a === b) return null;
+    [p[a], p[b]] = [p[b], p[a]];
+  }
+  return p;
+}
+
+/** Nombre minimal d'échanges pour résoudre (n − nombre de cycles). */
+export function minSwaps(perm: number[]): number {
+  const seen = new Array(perm.length).fill(false);
+  let cycles = 0;
+  for (let i = 0; i < perm.length; i++) {
+    if (seen[i]) continue;
+    cycles++;
+    for (let j = i; !seen[j]; j = perm[j]) seen[j] = true;
+  }
+  return perm.length - cycles;
+}
+
+/** Durée minimale crédible (secondes) pour terminer un puzzle. */
+export function puzzleMinSeconds(size: number) {
+  return size >= 4 ? 12 : 6;
+}
+
+/**
+ * Points du puzzle : plafond (×1,5 en 4×4), moins une pénalité pour les échanges
+ * inutiles et le temps au-delà d'un seuil. Minimum 5 points pour un puzzle résolu.
+ */
+export function scorePuzzle(size: number, moves: number, optimal: number, seconds: number, maxPoints: number): number {
+  if (seconds < puzzleMinSeconds(size) || moves < optimal) return 0;
+  const cap = Math.round(maxPoints * (size >= 4 ? 1.5 : 1));
+  const extra = (moves - optimal) * 1;
+  const slow = Math.max(0, seconds - (size >= 4 ? 120 : 60)) * 0.2;
+  return Math.max(5, Math.round(cap - extra - slow));
 }

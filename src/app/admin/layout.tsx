@@ -10,6 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ["/admin/merchants", t("admin.merchants")],
     ["/admin/venues", t("admin.venues")],
     ["/admin/users", t("admin.users")],
+    ["/admin/draws", t("admin.draws")],
     ["/admin/reviews", t("admin.reviews")],
     ["/admin/settings", t("admin.settings")],
   ];

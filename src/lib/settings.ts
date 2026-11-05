@@ -7,6 +7,12 @@ export const DEFAULT_SETTINGS = {
   autoBlock: 1,
   gracePeriodDays: 3,
   dailyPlaysPerGame: 3,
+  puzzleEnabled: 1, // 1 = jeu affiché, 0 = masqué
+  quizEnabled: 1,
+  memoryEnabled: 1,
+  wheelEnabled: 1,
+  puzzleMaxPoints: 30, // ×1,5 en 4×4
+  puzzleTicketsPerWin: 1, // tickets de tirage gagnés par puzzle terminé
   quizPointsPerAnswer: 5,
   quizMenuQuestions: 3, // questions tirées des menus des établissements (sur 5)
   quizSponsoredWeight: 5, // poids des établissements de commerçants abonnés dans le quiz

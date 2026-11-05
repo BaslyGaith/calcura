@@ -153,3 +153,47 @@ export async function saveSettings(form: FormData) {
   revalidatePath("/", "layout");
   redirect("/admin/settings?saved=1");
 }
+
+// ---------- Tirages au sort ----------
+export async function createDraw(form: FormData) {
+  await admin();
+  const title = str(form, "title");
+  const prize = str(form, "prize");
+  const endsAt = str(form, "endsAt");
+  if (title.length < 2 || prize.length < 2 || !endsAt) return;
+  const end = new Date(`${endsAt}T23:59:59`);
+  if (Number.isNaN(end.getTime()) || end <= new Date()) return;
+  const num = (k: string, d: number) => {
+    const n = Number(str(form, k));
+    return Number.isFinite(n) && n >= 0 ? n : d;
+  };
+  await prisma.draw.create({
+    data: {
+      title, prize,
+      description: str(form, "description") || null,
+      prizeValueTnd: str(form, "prizeValueTnd") ? num("prizeValueTnd", 0) : null,
+      venueId: str(form, "venueId") || null,
+      ticketCostPoints: Math.floor(num("ticketCostPoints", 0)),
+      maxTicketsPerUser: Math.max(1, Math.floor(num("maxTicketsPerUser", 50))),
+      startsAt: str(form, "startsAt") ? new Date(`${str(form, "startsAt")}T00:00:00`) : new Date(),
+      endsAt: end,
+    },
+  });
+  done("/admin/draws");
+  revalidatePath("/draws");
+}
+
+export async function drawNow(form: FormData) {
+  await admin();
+  const { performDraw } = await import("@/lib/draws");
+  try { await performDraw(str(form, "id")); } catch { /* déjà tiré */ }
+  done("/admin/draws");
+  revalidatePath("/draws");
+}
+
+export async function cancelDraw(form: FormData) {
+  await admin();
+  await prisma.draw.updateMany({ where: { id: str(form, "id"), status: "OPEN" }, data: { status: "CANCELLED" } });
+  done("/admin/draws");
+  revalidatePath("/draws");
+}
