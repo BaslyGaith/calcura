@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { getT } from "@/lib/i18n/server";
 import { FEATURES, parseFeatures } from "@/lib/venues";
-import { ActionButton, MenuItemForm, OfferForm, PhotoForm, VenueForm } from "../../MerchantForms";
+import { ActionButton, DishImageForm, MenuItemForm, OfferForm, PhotoForm, VenueForm } from "../../MerchantForms";
 
 export const dynamic = "force-dynamic";
 
@@ -62,8 +62,14 @@ export default async function EditVenuePage({ params }: { params: { id: string }
           <tbody>
             {venue.menuItems.map((m) => (
               <tr key={m.id}>
+                <td className="w-14">
+                  {m.imageUrl
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={m.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover" />
+                    : <span className="grid h-12 w-12 place-items-center rounded-lg bg-stone-100 text-xs text-stone-400">—</span>}
+                </td>
                 <td className="text-xs text-stone-500">{m.category}</td>
-                <td className="font-medium">{m.name}</td>
+                <td className="font-medium">{m.name}<div className="mt-1"><DishImageForm itemId={m.id} hasImage={!!m.imageUrl} /></div></td>
                 <td className="text-right">{m.price.toFixed(3)} {t("common.tnd")}</td>
                 <td className="text-right"><ActionButton kind="item" id={m.id} label={t("common.delete")} /></td>
               </tr>

@@ -10,6 +10,7 @@ type Game = {
   size: number;
   image: string;
   venue: { id: string; name: string; city: string | null; type: string };
+  dish: { name: string; price: number; category: string; description: string | null } | null;
 };
 
 function tileStyle(image: string, piece: number, size: number): React.CSSProperties {
@@ -58,7 +59,7 @@ export function Puzzle() {
       setError(null); setResult(null); setSolved(false); setSelected(null); setSwaps([]); setPreview(false);
       const r = await startPuzzle(size);
       if (!r.ok) return setError(r.error);
-      setGame({ token: r.token, size: r.size, image: r.image, venue: r.venue });
+      setGame({ token: r.token, size: r.size, image: r.image, venue: r.venue, dish: r.dish });
       setTiles(r.perm);
       setT0(Date.now()); setNow(Date.now());
     });
@@ -95,8 +96,18 @@ export function Puzzle() {
         <>
           <a href={venueLink} target="_blank" rel="noreferrer" className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-stone-200 bg-orange-50/60 px-3 py-2 hover:border-brand-300">
             <span className="min-w-0">
-              <span className="block text-xs text-stone-500">{t("games.puzzle.from")}</span>
-              <span className="block truncate font-semibold">{game.venue.type === "CAFE" ? "☕" : "🍽️"} {game.venue.name}{game.venue.city ? ` · ${game.venue.city}` : ""}</span>
+              {game.dish ? (
+                <>
+                  <span className="block text-xs text-stone-500">{t("games.puzzle.dishToRebuild")}</span>
+                  <span className="block truncate font-bold">🍽️ {game.dish.name} · <span className="text-brand-600">{game.dish.price.toFixed(3)} {t("common.tnd")}</span></span>
+                  <span className="block truncate text-xs text-stone-600">{t("rewards.at", { venue: game.venue.name })}{game.venue.city ? ` · ${game.venue.city}` : ""}</span>
+                </>
+              ) : (
+                <>
+                  <span className="block text-xs text-stone-500">{t("games.puzzle.from")}</span>
+                  <span className="block truncate font-semibold">{game.venue.type === "CAFE" ? "☕" : "🍽️"} {game.venue.name}{game.venue.city ? ` · ${game.venue.city}` : ""}</span>
+                </>
+              )}
             </span>
             <span className="whitespace-nowrap text-xs font-semibold text-brand-600">{t("games.seeMenu")}</span>
           </a>
@@ -131,6 +142,11 @@ export function Puzzle() {
 
       {result && (
         <div className="mt-4 rounded-xl bg-lime-50 p-4 text-center">
+          {game?.dish && (
+            <p className="mb-2 text-lg font-bold">
+              😋 {t("games.puzzle.dishAt", { dish: game.dish.name, price: `${game.dish.price.toFixed(3)} ${t("common.tnd")}`, venue: game.venue.name })}
+            </p>
+          )}
           <p className="font-semibold">✅ {t("games.puzzle.solved")} {t("games.moves", { n: result.moves })} · {t("games.time", { n: result.seconds })}</p>
           {result.points > 0
             ? <p className="text-2xl font-extrabold text-olive-600">{t("games.won", { n: result.points })}</p>

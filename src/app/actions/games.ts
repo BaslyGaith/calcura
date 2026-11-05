@@ -106,7 +106,7 @@ export async function startPuzzle(size: number) {
   await recordView(photo.venue.id, g.userId, "GAME_SHOWN");
   // Jeton signé : le serveur rejouera les échanges à partir de ce mélange.
   const token = await signData({ uid: g.userId, game: "PUZZLE", size: sz, perm, t0: Date.now(), venueId: photo.venue.id }, 3600);
-  return { ok: true as const, token, size: sz, perm, image: photo.url, venue: photo.venue };
+  return { ok: true as const, token, size: sz, perm, image: photo.url, venue: photo.venue, dish: photo.dish };
 }
 
 export async function submitPuzzle(token: string, swaps: [number, number][]) {

@@ -101,20 +101,60 @@ export async function ratingMap(venueIds: string[]) {
   return new Map(rows.map((r) => [r.venueId, { avg: r._avg.rating ?? 0, count: r._count._all }]));
 }
 
-/** Points légers pour la carte (limités pour rester fluides). */
-export async function mapPoints(f: VenueFilters, limit = 2000) {
-  const and: Prisma.VenueWhereInput[] = [visibleVenueWhere];
-  if (f.type === "CAFE" || f.type === "RESTAURANT") and.push({ type: f.type });
-  if (f.gov) and.push({ governorate: { slug: f.gov } });
-  if (f.q) and.push({ OR: [{ name: { contains: f.q } }, { city: { contains: f.q } }] });
-  return prisma.venue.findMany({
-    where: { AND: and },
-    select: { id: true, name: true, type: true, lat: true, lng: true, city: true },
-    take: limit,
-  });
-}
-
 export function parseFeatures(s: string | null | undefined): Feature[] {
   if (!s) return [];
   return s.split(",").map((x) => x.trim()).filter((x): x is Feature => (FEATURES as readonly string[]).includes(x));
 }
+
+export type NearbyParams = {
+  bounds: { n: number; s: number; e: number; w: number };
+  ref: { lat: number; lng: number }; // point de référence pour la distance (position ou centre)
+  type?: string;
+  offers?: boolean;
+  topRated?: boolean;
+  q?: string;
+  limit?: number;
+};
+
+/** Établissements visibles dans une zone de carte, triés du plus proche au plus loin. */
+export async function nearbyVenues(p: NearbyParams) {
+  const and: Prisma.VenueWhereInput[] = [
+    visibleVenueWhere,
+    { lat: { gte: p.bounds.s, lte: p.bounds.n }, lng: { gte: p.bounds.w, lte: p.bounds.e } },
+  ];
+  if (p.type === "CAFE" || p.type === "RESTAURANT") and.push({ type: p.type });
+  if (p.offers) and.push({ offers: { some: { active: true, stock: { gt: 0 }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } } });
+  if (p.q) and.push({ OR: [{ name: { contains: p.q } }, { cuisine: { contains: p.q } }, { city: { contains: p.q } }, { menuItems: { some: { name: { contains: p.q } } } }] });
+
+  const light = await prisma.venue.findMany({ where: { AND: and }, select: { id: true, lat: true, lng: true } });
+  const ratings = p.topRated ? await ratingMap(light.map((v) => v.id)) : null;
+  const ordered = light
+    .filter((v) => !ratings || (ratings.get(v.id)?.avg ?? 0) >= 4)
+    .map((v) => ({ id: v.id, d: distanceKm(p.ref.lat, p.ref.lng, v.lat, v.lng) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, p.limit ?? 300);
+  const ids = ordered.map((o) => o.id);
+  const [rows, rmap] = await Promise.all([
+    prisma.venue.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true, name: true, type: true, lat: true, lng: true, city: true, cuisine: true, priceLevel: true, coverImage: true, openingHours: true,
+        photos: { where: { kind: "PLACE" }, take: 1, select: { url: true } },
+        _count: { select: { offers: { where: { active: true, stock: { gt: 0 } } } } },
+      },
+    }),
+    ratings ? Promise.resolve(ratings) : ratingMap(ids),
+  ]);
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ordered.flatMap((o) => {
+    const v = byId.get(o.id);
+    if (!v) return [];
+    return [{
+      id: v.id, name: v.name, type: v.type, lat: v.lat, lng: v.lng, city: v.city, cuisine: v.cuisine, priceLevel: v.priceLevel,
+      openingHours: v.openingHours, image: v.coverImage ?? v.photos[0]?.url ?? null, offers: v._count.offers,
+      rating: rmap.get(v.id)?.avg ?? null, reviews: rmap.get(v.id)?.count ?? 0, distanceKm: o.d,
+    }];
+  });
+}
+
+export type NearbyVenue = Awaited<ReturnType<typeof nearbyVenues>>[number];

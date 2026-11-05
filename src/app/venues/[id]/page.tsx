@@ -7,7 +7,7 @@ import { getT } from "@/lib/i18n/server";
 import { getSettings } from "@/lib/settings";
 import { parseFeatures, visibleVenueWhere } from "@/lib/venues";
 import { Stars } from "@/components/Stars";
-import { VenueMapLazy } from "@/components/VenueMapLazy";
+import { MiniMapLazy } from "@/components/map/MiniMapLazy";
 import { RedeemButton } from "@/components/RedeemButton";
 import { PhotoGallery } from "./PhotoGallery";
 import { VenueActions } from "./VenueActions";
@@ -53,6 +53,7 @@ export default async function VenuePage({ params }: { params: { id: string } }) 
   const placePhotos = venue.photos.filter((p) => p.kind === "PLACE");
   const cover = venue.coverImage ?? placePhotos[0]?.url;
   const categories = Array.from(new Set(venue.menuItems.map((m) => m.category)));
+  const dishes = venue.menuItems.filter((m) => m.imageUrl);
   const features = parseFeatures(venue.features);
   const gov = locale === "en" ? venue.governorate.nameEn : venue.governorate.nameFr;
 
@@ -100,6 +101,20 @@ export default async function VenuePage({ params }: { params: { id: string } }) 
 
           <section className="card p-5">
             <h2 className="h2 mb-3">🍴 {t("venue.menu")}</h2>
+            {dishes.length > 0 && (
+              <div className="-mx-5 mb-5 flex snap-x gap-3 overflow-x-auto px-5 pb-2">
+                {dishes.map((m) => (
+                  <figure key={m.id} className="w-40 shrink-0 snap-start overflow-hidden rounded-xl border border-stone-200 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={m.imageUrl!} alt={m.name} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+                    <figcaption className="p-2">
+                      <span className="line-clamp-1 text-sm font-semibold">{m.name}</span>
+                      <span className="text-sm font-bold text-brand-600">{m.price.toFixed(3)} {t("common.tnd")}</span>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            )}
             {categories.length === 0 ? (
               <p className="text-sm text-stone-500">{t("venue.noMenu")}</p>
             ) : (
@@ -109,8 +124,10 @@ export default async function VenuePage({ params }: { params: { id: string } }) 
                     <h3 className="mb-2 border-b border-dashed border-stone-300 pb-1 font-bold text-brand-700">{c}</h3>
                     <ul className="space-y-2">
                       {venue.menuItems.filter((m) => m.category === c).map((m) => (
-                        <li key={m.id} className="flex justify-between gap-3 text-sm">
-                          <span>
+                        <li key={m.id} className="flex items-center justify-between gap-3 text-sm">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {m.imageUrl && <img src={m.imageUrl} alt="" loading="lazy" className="h-10 w-10 shrink-0 rounded-lg object-cover" />}
+                          <span className="flex-1">
                             <span className="font-medium">{m.name}</span>
                             {m.description && <span className="block text-xs text-stone-500">{m.description}</span>}
                           </span>
@@ -178,7 +195,7 @@ export default async function VenuePage({ params }: { params: { id: string } }) 
           )}
           <section className="card p-5">
             <h2 className="h2 mb-3">📍 {t("venue.location")}</h2>
-            <VenueMapLazy points={[{ id: venue.id, name: venue.name, type: venue.type, lat: venue.lat, lng: venue.lng, city: venue.city }]} center={[venue.lat, venue.lng]} zoom={15} height="16rem" />
+            <MiniMapLazy points={[{ id: venue.id, name: venue.name, type: venue.type, lat: venue.lat, lng: venue.lng }]} center={[venue.lat, venue.lng]} zoom={15} height="16rem" />
             <dl className="mt-3 space-y-1 text-sm">
               {venue.openingHours && <div><dt className="inline font-semibold">{t("venue.hours")} : </dt><dd className="inline">{venue.openingHours}</dd></div>}
               {venue.phone && <div><dt className="inline font-semibold">{t("common.phone")} : </dt><dd className="inline">{venue.phone}</dd></div>}

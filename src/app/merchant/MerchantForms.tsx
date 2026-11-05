@@ -1,9 +1,9 @@
 "use client";
 import { useFormState } from "react-dom";
 import { useTransition } from "react";
-import { addMenuItem, addOffer, addPhoto, deleteMenuItem, deletePhoto, requestSubscription, saveVenue, toggleOffer, validateVoucher } from "@/app/actions/merchant";
+import { addMenuItem, addOffer, addPhoto, deleteMenuItem, deletePhoto, requestSubscription, saveVenue, setMenuItemImage, toggleOffer, validateVoucher } from "@/app/actions/merchant";
 import { SubmitButton } from "@/components/SubmitButton";
-import { VenueMapLazy } from "@/components/VenueMapLazy";
+import { MiniMapLazy } from "@/components/map/MiniMapLazy";
 import { useT } from "@/lib/i18n/client";
 import type { DictKey } from "@/lib/i18n/dictionaries";
 
@@ -78,7 +78,7 @@ export function VenueForm({ v, governorates, features }: { v: VenueFormValues; g
       </fieldset>
       <div>
         <span className="label">{t("merchant.latlng")}</span>
-        <VenueMapLazy points={[]} center={v.lat && v.lng ? [v.lat, v.lng] : [36.8065, 10.1815]} zoom={v.lat ? 15 : 7} height="20rem" picker={{ name: "pos", initial: v.lat && v.lng ? [v.lat, v.lng] : null }} />
+        <MiniMapLazy center={v.lat && v.lng ? [v.lat, v.lng] : [36.8065, 10.1815]} zoom={v.lat ? 15 : 7} height="20rem" picker={{ name: "pos", initial: v.lat && v.lng ? [v.lat, v.lng] : null }} />
       </div>
       <Msg state={state} />
       <SubmitButton>{t("common.save")}</SubmitButton>
@@ -129,6 +129,15 @@ export function MenuItemForm({ venueId }: { venueId: string }) {
       <input name="name" required placeholder={t("common.name")} className="input" />
       <input name="price" required type="number" step="0.001" min="0" placeholder={t("merchant.price")} className="input" />
       <input name="description" placeholder={t("merchant.description")} className="input" />
+      <label className="sm:col-span-2">
+        <span className="label">📸 {t("merchant.dishPhoto")}</span>
+        <input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="input" />
+      </label>
+      <label className="sm:col-span-2">
+        <span className="label">{t("merchant.photoUrl")}</span>
+        <input name="imageUrl" type="url" placeholder="https://…" className="input" />
+      </label>
+      <p className="sm:col-span-4 text-xs text-stone-500">🧩 {t("merchant.dishPhotoHint")}</p>
       <div className="sm:col-span-4 flex items-center gap-3"><SubmitButton>{t("common.add")}</SubmitButton><Msg state={state} /></div>
     </form>
   );
@@ -182,5 +191,19 @@ export function RequestSubscription({ prices }: { prices: { MONTHLY: number; YEA
         </button>
       ))}
     </div>
+  );
+}
+
+/** Ajout / remplacement de la photo d'un plat existant. */
+export function DishImageForm({ itemId, hasImage }: { itemId: string; hasImage: boolean }) {
+  const { t } = useT();
+  const [state, action] = useFormState(setMenuItemImage, undefined);
+  return (
+    <form action={action} className="flex flex-wrap items-center gap-1">
+      <input type="hidden" name="itemId" value={itemId} />
+      <input name="image" type="file" required accept="image/jpeg,image/png,image/webp,image/gif" aria-label={t("merchant.dishPhoto")} className="max-w-[11rem] text-xs" />
+      <SubmitButton className="btn-secondary btn-sm">{hasImage ? t("merchant.replacePhoto") : "📸 " + t("common.add")}</SubmitButton>
+      <Msg state={state} />
+    </form>
   );
 }

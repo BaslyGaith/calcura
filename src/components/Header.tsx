@@ -9,8 +9,9 @@ export async function Header() {
   const user = await getCurrentUser();
   const { t } = getT();
   const links = [
+    { href: "/", label: t("nav.map") },
+    { href: "/discover", label: t("nav.discover") },
     { href: "/explore", label: t("nav.explore") },
-    { href: "/explore?view=map", label: t("nav.map") },
     { href: "/games", label: t("nav.games") },
     { href: "/draws", label: t("nav.draws") },
     { href: "/rewards", label: t("nav.rewards") },

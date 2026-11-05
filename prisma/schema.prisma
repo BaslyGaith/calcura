@@ -91,6 +91,7 @@ model Venue {
   draws     Draw[]
 
   @@index([governorateId, type, status])
+  @@index([lat, lng])
 }
 
 /// kind: MENU | PLACE
@@ -112,6 +113,7 @@ model MenuItem {
   name        String
   description String?
   price       Float // en dinars tunisiens (TND)
+  imageUrl    String? // photo du plat (utilisée dans le menu et le puzzle)
   available   Boolean @default(true)
 }
 

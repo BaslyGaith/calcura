@@ -95,6 +95,27 @@ export async function saveVenue(_: FormState, form: FormData): Promise<FormState
 const ALLOWED_IMAGE_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
 const MAX_UPLOAD = 5 * 1024 * 1024;
 
+/**
+ * Lit une image du formulaire (fichier envoyé ou URL http(s)).
+ * Renvoie l'URL publique, null si aucune image n'est fournie, ou "invalid".
+ */
+async function readImage(form: FormData, venueId: string, fileField = "file", urlField = "url"): Promise<string | null | "invalid"> {
+  const file = form.get(fileField);
+  const url = String(form.get(urlField) ?? "").trim();
+  if (file instanceof File && file.size > 0) {
+    const ext = ALLOWED_IMAGE_TYPES[file.type];
+    if (!ext || file.size > MAX_UPLOAD) return "invalid";
+    // Stockage local (public/uploads). En production, remplacez par un stockage objet (S3, Cloudinary…).
+    const dir = path.join(process.cwd(), "public", "uploads", venueId);
+    await mkdir(dir, { recursive: true });
+    const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+    await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
+    return `/uploads/${venueId}/${name}`;
+  }
+  if (!url) return null;
+  return /^https?:\/\/\S+$/i.test(url) ? url : "invalid";
+}
+
 export async function addPhoto(_: FormState, form: FormData): Promise<FormState> {
   const { t } = getT();
   let user;
@@ -103,24 +124,27 @@ export async function addPhoto(_: FormState, form: FormData): Promise<FormState>
   try { await ownVenue(user, venueId); } catch { return { error: t("common.error") }; }
   const kind = form.get("kind") === "MENU" ? "MENU" : "PLACE";
   const caption = String(form.get("caption") ?? "").trim().slice(0, 200) || null;
-  const file = form.get("file");
-  let url = String(form.get("url") ?? "").trim();
-
-  if (file instanceof File && file.size > 0) {
-    const ext = ALLOWED_IMAGE_TYPES[file.type];
-    if (!ext || file.size > MAX_UPLOAD) return { error: t("auth.invalidForm") };
-    // Stockage local (public/uploads). En production, remplacez par un stockage objet (S3, Cloudinary…).
-    const dir = path.join(process.cwd(), "public", "uploads", venueId);
-    await mkdir(dir, { recursive: true });
-    const name = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-    await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
-    url = `/uploads/${venueId}/${name}`;
-  } else if (!/^https?:\/\/\S+$/i.test(url)) {
-    return { error: t("auth.invalidForm") };
-  }
+  const url = await readImage(form, venueId);
+  if (!url || url === "invalid") return { error: t("auth.invalidForm") };
   await prisma.photo.create({ data: { venueId, url, kind, caption } });
   revalidatePath(`/merchant/venues/${venueId}`);
   revalidatePath(`/venues/${venueId}`);
+  return { ok: t("common.saved") };
+}
+
+/** Ajoute ou remplace la photo d'un plat du menu. */
+export async function setMenuItemImage(_: FormState, form: FormData): Promise<FormState> {
+  const { t } = getT();
+  let user;
+  try { user = await merchant(); } catch { return { error: t("common.error") }; }
+  const item = await prisma.menuItem.findUnique({ where: { id: String(form.get("itemId")) } });
+  if (!item) return { error: t("common.error") };
+  try { await ownVenue(user, item.venueId); } catch { return { error: t("common.error") }; }
+  const url = await readImage(form, item.venueId, "image", "imageUrl");
+  if (!url || url === "invalid") return { error: t("auth.invalidForm") };
+  await prisma.menuItem.update({ where: { id: item.id }, data: { imageUrl: url } });
+  revalidatePath(`/merchant/venues/${item.venueId}`);
+  revalidatePath(`/venues/${item.venueId}`);
   return { ok: t("common.saved") };
 }
 
@@ -151,7 +175,9 @@ export async function addMenuItem(_: FormState, form: FormData): Promise<FormSta
   });
   if (!parsed.success) return { error: t("auth.invalidForm") };
   try { await ownVenue(user, parsed.data.venueId); } catch { return { error: t("common.error") }; }
-  await prisma.menuItem.create({ data: parsed.data });
+  const imageUrl = await readImage(form, parsed.data.venueId, "image", "imageUrl");
+  if (imageUrl === "invalid") return { error: t("auth.invalidForm") };
+  await prisma.menuItem.create({ data: { ...parsed.data, imageUrl } });
   revalidatePath(`/merchant/venues/${parsed.data.venueId}`);
   return { ok: t("common.saved") };
 }

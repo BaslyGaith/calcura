@@ -6,6 +6,15 @@ Interface **en français** (par défaut) et **en anglais** (bouton FR / EN dans 
 
 ## Fonctionnalités
 
+### Carte d'accueil (façon Waze)
+- L'application **s'ouvre sur une carte plein écran centrée sur votre position** (point bleu animé), avec les cafés ☕ et restaurants 🍽️ alentour sous forme d'épingles colorées ; un badge 🎁 signale les offres. En dézoomant, les épingles se regroupent en bulles numérotées.
+- **Zoom intelligent** : s'il y a trop peu de lieux autour de vous (ou après une recherche), la carte s'élargit automatiquement jusqu'à en trouver.
+- Barre de recherche flottante (nom, ville, cuisine **ou plat**) et filtres en un geste : Cafés, Restaurants, 🎁 Offres, ⭐ 4+.
+- Liste des lieux les plus proches synchronisée avec la carte : panneau du bas glissant sur mobile, colonne à gauche sur ordinateur. Bouton **« Y aller »** qui ouvre l'itinéraire dans **Waze** (Google Maps aussi disponible sur la fiche).
+- Bouton 🎯 pour revenir sur sa position ; la dernière position est mémorisée pour un démarrage instantané. Si la localisation est refusée, la carte démarre sur Tunis avec un rappel.
+- Carte vectorielle MapLibre (fluide sur mobile), fond **OpenFreeMap** gratuit et sans clé ; repli automatique sur les tuiles OpenStreetMap. Style modifiable avec `NEXT_PUBLIC_MAP_STYLE_URL`.
+- Sur mobile, barre d'onglets en bas comme une application : Carte, Explorer, Jeux, Tirages, Moi.
+
 ### Utilisateur
 - Recherche par nom, ville ou cuisine ; filtres : type (café / restaurant), gouvernorat, budget, équipements (Wi-Fi, terrasse, vue sur mer…).
 - **Autour de moi** : géolocalisation du navigateur, tri par distance.
@@ -13,7 +22,7 @@ Interface **en français** (par défaut) et **en anglais** (bouton FR / EN dans 
 - Fiche établissement : photos du menu (galerie plein écran), menu détaillé avec prix en DT, photos du lieu, carte, horaires, itinéraire Google Maps, appel, partage, favoris.
 - Avis et notes (points offerts pour un premier avis).
 - **Jeux** : Puzzle du menu, Quiz Tunisie, Memory gourmand, Roue de la chance (1 tour par jour). L'admin peut activer ou masquer chaque jeu.
-- **Puzzle du menu** : la photo du menu d'un café ou restaurant est découpée en 3×3 (facile) ou 4×4 (difficile, ×1,5 points) ; on touche deux pièces pour les échanger jusqu'à reconstituer la photo. Un puzzle terminé rapporte des points **et un ticket pour chaque tirage au sort en cours**. Le nom de l'établissement et un lien « Voir le menu » sont affichés pendant la partie (visibilité pour le commerçant ; les commerçants abonnés sont favorisés).
+- **Puzzle du menu** : la **photo d'un plat** d'un café ou restaurant (ex. « Couscous à l'agneau · 18 DT chez … ») est découpée en 3×3 (facile) ou 4×4 (difficile, ×1,5 points) ; on touche deux pièces pour les échanger jusqu'à reconstituer la photo. Un puzzle terminé rapporte des points **et un ticket pour chaque tirage au sort en cours**. Le nom de l'établissement et un lien « Voir le menu » sont affichés pendant la partie (visibilité pour le commerçant ; les commerçants abonnés sont favorisés).
 - **Tirages au sort** (page « Tirages ») : on gagne des tickets en terminant des puzzles, ou on les achète avec des points si l'admin l'autorise. Plus on a de tickets, plus on a de chances. À la date de fin, le gagnant est tiré au sort (pondéré par les tickets, comptes bloqués exclus) ; le lot — par exemple **un repas pour 2** — arrive automatiquement dans « Mes bons d'achat » avec un code que le restaurant valide comme un bon normal.
 - **Quiz relié aux menus** : sur 5 questions, jusqu'à 3 (réglable) portent sur de vrais établissements — « Lequel de ces articles figure au menu de… ? », « Combien coûte… chez… ? », « Quel est l'article le moins cher de la catégorie… ? », « Dans quel gouvernorat se trouve… ? ». Chaque question affiche l'établissement avec un lien **« Voir le menu »** : le joueur consulte la fiche pour trouver la réponse, ce qui donne de la visibilité au café ou restaurant. Les établissements des commerçants abonnés apparaissent plus souvent (priorité réglable), et le récapitulatif de fin de partie liste les établissements découverts.
 - **Bons d'achat** : échange de points contre une offre, code unique `BP-XXXX-XXXX` à présenter au commerçant, annulation avec remboursement.
@@ -22,7 +31,7 @@ Interface **en français** (par défaut) et **en anglais** (bouton FR / EN dans 
 
 ### Commerçant
 - Création et modification de ses établissements (position choisie sur la carte).
-- Envoi de photos (menu / lieu) depuis un fichier ou une URL ; gestion du menu ; création d'offres (coût en points, stock, date d'expiration).
+- Envoi de photos (menu / lieu) depuis un fichier ou une URL ; gestion du menu avec **une photo par plat** (affichée en vitrine en haut du menu et utilisée dans le jeu Puzzle) ; création d'offres (coût en points, stock, date d'expiration).
 - **Validation des bons d'achat** des clients (un code ne peut servir qu'une fois).
 - **Statistiques de visibilité** sur 30 jours : vues au total, vues de la fiche, affichages dans le quiz, visites depuis le quiz, graphique des vues par jour, détail par établissement.
 - Suivi de l'abonnement et demande d'abonnement (mensuel / annuel).
@@ -46,7 +55,7 @@ Les points sont toujours calculés **côté serveur**. Puzzle : le serveur rejou
 - [Next.js 14](https://nextjs.org) (App Router, Server Actions), React 18, TypeScript, Tailwind CSS
 - [Prisma](https://www.prisma.io) : SQLite en développement, PostgreSQL conseillé en production
 - Sessions signées (JWT HS256 via `jose`) dans un cookie httpOnly, mots de passe `bcrypt`
-- Leaflet / react-leaflet pour les cartes
+- MapLibre GL (cartes vectorielles) avec le fond OpenFreeMap
 
 ## Démarrage
 

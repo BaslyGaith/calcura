@@ -26,6 +26,17 @@ const RESTO_MENU = [
   ["Pizzas", "Pizza margherita", 9.0], ["Pizzas", "Pizza neptune", 12.0],
   ["Desserts", "Assida", 4.0], ["Desserts", "Zrir", 4.5],
 ] as const;
+// Photos de plats de démonstration (public/demo/dishes) — utilisées dans le menu et le puzzle.
+const DISH_IMAGES: Record<string, string> = {
+  "Express": "express", "Capucin": "capucin", "Café crème": "cafe-creme", "Thé à la menthe": "the-menthe", "Thé aux pignons": "the-pignons",
+  "Citronnade": "citronnade", "Jus d'orange pressé": "jus-orange", "Eau minérale": "eau", "Croissant": "croissant", "Bambalouni": "bambalouni",
+  "Formule petit-déjeuner": "petit-dej", "Bouza": "bouza", "Makroudh": "makroudh", "Brik à l'œuf": "brik", "Salade méchouia": "mechouia",
+  "Chorba frik": "chorba", "Lablabi": "lablabi", "Couscous à l'agneau": "couscous", "Ojja merguez": "ojja", "Kamounia": "kamounia",
+  "Poisson grillé du jour": "poisson", "Kafteji": "kafteji", "Pizza margherita": "pizza-margherita", "Pizza neptune": "pizza-neptune",
+  "Assida": "assida", "Zrir": "zrir",
+};
+const dishImage = (name: string) => (DISH_IMAGES[name] ? `/demo/dishes/${DISH_IMAGES[name]}.svg` : null);
+
 const FEATURE_SETS = ["wifi,terrasse", "wifi,climatisation,famille", "terrasse,vue_mer", "parking,famille,livraison", "wifi,match,terrasse", "non_fumeur,climatisation"];
 
 const pick = <T,>(arr: readonly T[], i: number) => arr[i % arr.length];
@@ -114,7 +125,7 @@ async function main() {
               { url: isCafe ? "/demo/menu-cafe.svg" : i % 2 ? "/demo/menu-resto.svg" : "/demo/menu-pizza.svg", kind: "MENU", caption: "Carte" },
             ],
           },
-          menuItems: { create: menu.map(([category, n, price]) => ({ category, name: n, price: Number((price * (1 + (i % 3) * 0.1)).toFixed(3)) })) },
+          menuItems: { create: menu.map(([category, n, price]) => ({ category, name: n, price: Number((price * (1 + (i % 3) * 0.1)).toFixed(3)), imageUrl: dishImage(n) })) },
         },
       });
       created.push(v.id);
@@ -139,7 +150,7 @@ async function main() {
         lat: o.lat, lng: o.lng, coverImage: o.img, features: "wifi,terrasse,climatisation", phone: "+216 71 000 000",
         governorateId: o.gov.id,
         photos: { create: [{ url: o.img, kind: "PLACE", caption: "Façade" }, { url: o.type === "CAFE" ? "/demo/menu-cafe.svg" : "/demo/menu-pizza.svg", kind: "MENU", caption: "Menu" }] },
-        menuItems: { create: o.menu.map(([category, n, price]) => ({ category, name: n, price })) },
+        menuItems: { create: o.menu.map(([category, n, price]) => ({ category, name: n, price, imageUrl: dishImage(n) })) },
         offers: {
           create: [
             { title: o.type === "CAFE" ? "Un express offert" : "Un dessert offert", description: "Valable sur place, une fois par visite.", pointsCost: 60, valueTnd: 2, stock: 100 },

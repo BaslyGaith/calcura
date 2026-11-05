@@ -23,6 +23,7 @@ export function VenueActions({ venueId, isFavorite, loggedIn, phone, lat, lng }:
 
   return (
     <div className="flex flex-wrap gap-2">
+      <a className="btn bg-sky-500 text-white hover:bg-sky-600" target="_blank" rel="noreferrer" href={`https://waze.com/ul?ll=${lat}%2C${lng}&navigate=yes`}>🚗 {t("venue.waze")}</a>
       <a className="btn-primary" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}>🧭 {t("venue.directions")}</a>
       {phone && <a className="btn-secondary" href={`tel:${phone.replace(/\s/g, "")}`}>📞 {t("venue.call")}</a>}
       <button

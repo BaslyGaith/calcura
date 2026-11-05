@@ -29,3 +29,15 @@ export function nearestBy<T extends { lat: number; lng: number }>(items: T[], la
 export function isInTunisia(lat: number, lng: number): boolean {
   return lat >= 30.2 && lat <= 37.6 && lng >= 7.5 && lng <= 11.7;
 }
+
+export type Bounds = { n: number; s: number; e: number; w: number };
+
+/** Lit et normalise une zone (nord/sud/est/ouest) ; null si invalide. */
+export function parseBounds(p: { n?: unknown; s?: unknown; e?: unknown; w?: unknown }): Bounds | null {
+  const [n, s, e, w] = [p.n, p.s, p.e, p.w].map((v) => (v === null || v === undefined || v === "" ? NaN : Number(v)));
+  if (![n, s, e, w].every(Number.isFinite)) return null;
+  const clampLat = (x: number) => Math.max(-90, Math.min(90, x));
+  const clampLng = (x: number) => Math.max(-180, Math.min(180, x));
+  const b = { n: clampLat(Math.max(n, s)), s: clampLat(Math.min(n, s)), e: clampLng(Math.max(e, w)), w: clampLng(Math.min(e, w)) };
+  return b.n - b.s > 0 && b.e - b.w > 0 ? b : null;
+}

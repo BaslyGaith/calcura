@@ -18,3 +18,13 @@ test("distance Tunis – Sfax ≈ 230 km", () => {
 test("le gouvernorat le plus proche de Hammamet est Nabeul", () => {
   assert.equal(nearestBy(GOVERNORATES, 36.4, 10.6).slug, "nabeul");
 });
+
+import { parseBounds } from "../src/lib/geo";
+
+test("parseBounds normalise et rejette les zones invalides", () => {
+  assert.deepEqual(parseBounds({ n: "36.9", s: "36.7", e: "10.3", w: "10.1" }), { n: 36.9, s: 36.7, e: 10.3, w: 10.1 });
+  assert.deepEqual(parseBounds({ n: 36.7, s: 36.9, e: 10.1, w: 10.3 }), { n: 36.9, s: 36.7, e: 10.3, w: 10.1 });
+  assert.equal(parseBounds({ n: "x", s: 1, e: 2, w: 1 }), null);
+  assert.equal(parseBounds({ n: 1, s: 1, e: 2, w: 1 }), null);
+  assert.equal(parseBounds({}), null);
+});
