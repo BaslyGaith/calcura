@@ -12,7 +12,8 @@ Interface **en français** (par défaut) et **en anglais** (bouton FR / EN dans 
 - Vue **liste** ou **carte** (Leaflet + OpenStreetMap).
 - Fiche établissement : photos du menu (galerie plein écran), menu détaillé avec prix en DT, photos du lieu, carte, horaires, itinéraire Google Maps, appel, partage, favoris.
 - Avis et notes (points offerts pour un premier avis).
-- **Jeux** : Quiz Tunisie (cuisine et culture), Memory gourmand, Roue de la chance (1 tour par jour).
+- **Jeux** : Quiz Tunisie, Memory gourmand, Roue de la chance (1 tour par jour).
+- **Quiz relié aux menus** : sur 5 questions, jusqu'à 3 (réglable) portent sur de vrais établissements — « Lequel de ces articles figure au menu de… ? », « Combien coûte… chez… ? », « Quel est l'article le moins cher de la catégorie… ? », « Dans quel gouvernorat se trouve… ? ». Chaque question affiche l'établissement avec un lien **« Voir le menu »** : le joueur consulte la fiche pour trouver la réponse, ce qui donne de la visibilité au café ou restaurant. Les établissements des commerçants abonnés apparaissent plus souvent (priorité réglable), et le récapitulatif de fin de partie liste les établissements découverts.
 - **Bons d'achat** : échange de points contre une offre, code unique `BP-XXXX-XXXX` à présenter au commerçant, annulation avec remboursement.
 - Mon espace : solde, bons, favoris, historique des points, **code de parrainage**.
 - **Classement** des joueurs sur 30 jours.
@@ -21,15 +22,19 @@ Interface **en français** (par défaut) et **en anglais** (bouton FR / EN dans 
 - Création et modification de ses établissements (position choisie sur la carte).
 - Envoi de photos (menu / lieu) depuis un fichier ou une URL ; gestion du menu ; création d'offres (coût en points, stock, date d'expiration).
 - **Validation des bons d'achat** des clients (un code ne peut servir qu'une fois).
+- **Statistiques de visibilité** sur 30 jours : vues au total, vues de la fiche, affichages dans le quiz, visites depuis le quiz, graphique des vues par jour, détail par établissement.
 - Suivi de l'abonnement et demande d'abonnement (mensuel / annuel).
 
 ### Administrateur
-- Tableau de bord : statistiques et répartition des établissements par gouvernorat.
+- Tableau de bord : statistiques (dont les vues sur 30 jours), classement des établissements les plus consultés, répartition par gouvernorat. Colonne « Vues » dans la liste des établissements.
 - **Commerçants** : blocage / déblocage avec motif (bloquer un commerçant masque tous ses établissements), gestion des abonnements (créer, marquer payé / impayé).
 - **Blocage automatique** des établissements quand l'abonnement n'est pas payé (délai de grâce réglable). Le déblocage est automatique dès que le paiement est enregistré ; les blocages manuels de l'admin ne sont jamais levés automatiquement.
 - **Établissements** : bloquer / débloquer, mettre à la une, rattacher un lieu importé à un commerçant, supprimer.
 - **Utilisateurs** : rôle, blocage, ajustement des points. **Avis** : modération.
 - **Paramètres** : prix des abonnements, parties par jour, points par jeu, points de parrainage, validité des bons…
+
+### Nombre de vues
+Chaque fiche affiche son nombre de vues (👁), visible aussi sur les cartes de la liste ; la recherche peut trier par **« Les plus vus »**. Une vue = **un visiteur unique par jour** (compte utilisateur, ou identifiant anonyme en cookie pour les visiteurs non connectés). Les vues du propriétaire et des administrateurs, les robots et les préchargements de page ne sont pas comptés (la vue est enregistrée par le navigateur une fois la page affichée).
 
 ### Sécurité des jeux
 Les points sont toujours calculés **côté serveur** : réponses du quiz chiffrées dans un jeton (le navigateur ne peut pas les lire), durée du memory mesurée par le serveur, résultat de la roue tiré par le serveur, nombre de parties limité par jour. L'échange de points est atomique (pas de solde négatif ni de stock négatif).

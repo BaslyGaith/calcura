@@ -29,7 +29,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: SP }
     lat: num(searchParams.lat),
     lng: num(searchParams.lng),
     page: num(searchParams.page),
-    sort: sortParam === "distance" || sortParam === "rating" || sortParam === "name" || sortParam === "recent" ? sortParam : undefined,
+    sort: sortParam === "distance" || sortParam === "rating" || sortParam === "name" || sortParam === "recent" || sortParam === "popular" ? sortParam : undefined,
   };
   const view = searchParams.view === "map" ? "map" : "list";
   const governorates = await prisma.governorate.findMany({ orderBy: { nameFr: "asc" } });
@@ -83,6 +83,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: SP }
           <select name="sort" defaultValue={filters.sort ?? ""} className="input">
             <option value="">{t("explore.sort")}</option>
             {userPos && <option value="distance">{t("explore.sort.distance")}</option>}
+            <option value="popular">{t("explore.sort.popular")}</option>
             <option value="rating">{t("explore.sort.rating")}</option>
             <option value="name">{t("explore.sort.name")}</option>
             <option value="recent">{t("explore.sort.recent")}</option>

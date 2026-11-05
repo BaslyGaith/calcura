@@ -17,7 +17,7 @@ export type VenueFilters = {
   gov?: string;
   price?: number;
   feature?: string;
-  sort?: "distance" | "rating" | "name" | "recent";
+  sort?: "distance" | "rating" | "name" | "recent" | "popular";
   lat?: number;
   lng?: number;
   page?: number;
@@ -62,7 +62,7 @@ export async function searchVenues(f: VenueFilters) {
     pageIds = ordered.slice((page - 1) * perPage, page * perPage).map((o) => o.id);
   } else {
     const orderBy: Prisma.VenueOrderByWithRelationInput[] =
-      sort === "name" ? [{ name: "asc" }] : [{ featured: "desc" }, { createdAt: "desc" }];
+      sort === "name" ? [{ name: "asc" }] : sort === "popular" ? [{ viewCount: "desc" }, { name: "asc" }] : [{ featured: "desc" }, { createdAt: "desc" }];
     const [rows, count] = await Promise.all([
       prisma.venue.findMany({ where, orderBy, select: { id: true }, skip: (page - 1) * perPage, take: perPage }),
       prisma.venue.count({ where }),

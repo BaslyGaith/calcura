@@ -14,7 +14,7 @@ export default async function GamesPage() {
   const settings = await getSettings();
   const left = user ? await Promise.all(GAMES.map((g) => playsLeft(user.id, g))) : null;
   const meta = {
-    QUIZ: { emoji: "🧠", href: "/games/quiz", title: "games.quiz", desc: t("games.quiz.desc") },
+    QUIZ: { emoji: "🧠", href: "/games/quiz", title: "games.quiz", desc: t("games.quiz.menuDesc") },
     MEMORY: { emoji: "🃏", href: "/games/memory", title: "games.memory", desc: t("games.memory.desc") },
     WHEEL: { emoji: "🎡", href: "/games/wheel", title: "games.wheel", desc: t("games.wheel.desc", { n: settings.wheelMaxPoints }) },
   } as const;

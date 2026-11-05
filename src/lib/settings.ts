@@ -8,6 +8,8 @@ export const DEFAULT_SETTINGS = {
   gracePeriodDays: 3,
   dailyPlaysPerGame: 3,
   quizPointsPerAnswer: 5,
+  quizMenuQuestions: 3, // questions tirées des menus des établissements (sur 5)
+  quizSponsoredWeight: 5, // poids des établissements de commerçants abonnés dans le quiz
   memoryMaxPoints: 40,
   wheelMaxPoints: 100,
   reviewPoints: 10,

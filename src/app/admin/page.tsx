@@ -1,11 +1,18 @@
 import { prisma } from "@/lib/db";
 import { getT } from "@/lib/i18n/server";
 import { runEnforcement } from "@/app/actions/admin";
+import { dayKey } from "@/lib/views";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard({ searchParams }: { searchParams: { enforced?: string } }) {
   const { t, locale } = getT();
+  const since = dayKey(new Date(Date.now() - 29 * 86400000));
+  const [views30, topViewed] = await Promise.all([
+    prisma.venueView.count({ where: { source: "PAGE", day: { gte: since } } }),
+    prisma.venue.findMany({ where: { viewCount: { gt: 0 } }, orderBy: { viewCount: "desc" }, take: 10, select: { id: true, name: true, city: true, viewCount: true, type: true } }),
+  ]);
   const [users, merchants, venues, blockedVenues, vouchers, games, revenue, unpaid, byGov, govs, recent] = await Promise.all([
     prisma.user.count({ where: { role: "USER" } }),
     prisma.user.count({ where: { role: "MERCHANT" } }),
@@ -23,6 +30,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: {
     [t("admin.stat.users"), users, "👥"], [t("admin.stat.merchants"), merchants, "🏪"], [t("admin.stat.venues"), venues, "📍"],
     [t("admin.stat.blockedVenues"), blockedVenues, "⛔"], [t("admin.stat.vouchers"), vouchers, "🎟️"], [t("admin.stat.games"), games, "🎮"],
     [t("admin.stat.revenue"), `${revenue._sum.amountTnd ?? 0} ${t("common.tnd")}`, "💰"], [t("admin.stat.unpaid"), unpaid, "⚠️"],
+    [t("admin.stat.views30"), views30, "👁"],
   ] as const;
   const count = (gid: string, type: string) => byGov.find((b) => b.governorateId === gid && b.type === type)?._count._all ?? 0;
   const max = Math.max(1, ...govs.map((g) => count(g.id, "CAFE") + count(g.id, "RESTAURANT")));
@@ -57,6 +65,23 @@ export default async function AdminDashboard({ searchParams }: { searchParams: {
             );
           })}
         </div>
+      </section>
+
+      <section className="card p-5">
+        <h2 className="h2 mb-3">👁 {t("admin.topViewed")}</h2>
+        {topViewed.length === 0 ? <p className="text-sm text-stone-500">{t("common.none")}</p> : (
+          <table className="table-bp">
+            <tbody>
+              {topViewed.map((v, i) => (
+                <tr key={v.id}>
+                  <td className="w-8 text-stone-400">{i + 1}</td>
+                  <td><Link href={`/venues/${v.id}`} className="font-medium hover:underline">{v.type === "CAFE" ? "☕" : "🍽️"} {v.name}</Link> <span className="text-xs text-stone-500">{v.city}</span></td>
+                  <td className="text-right font-bold">{v.viewCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
 
       <section className="card p-5">

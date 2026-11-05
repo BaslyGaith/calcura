@@ -15,13 +15,13 @@ export async function GET(req: Request) {
     lng: num("lng"),
     page: num("page"),
     perPage: Math.min(50, num("perPage") ?? 24),
-    sort: sort === "distance" || sort === "rating" || sort === "name" || sort === "recent" ? sort : undefined,
+    sort: sort === "distance" || sort === "rating" || sort === "name" || sort === "recent" || sort === "popular" ? sort : undefined,
   });
   return NextResponse.json({
     total: res.total, page: res.page, pages: res.pages,
     items: res.items.map((v) => ({
       id: v.id, name: v.name, type: v.type, city: v.city, governorate: v.governorate.slug,
-      lat: v.lat, lng: v.lng, rating: v.rating, reviewCount: v.reviewCount, distanceKm: v.distance, image: v.image, priceLevel: v.priceLevel,
+      lat: v.lat, lng: v.lng, rating: v.rating, reviewCount: v.reviewCount, distanceKm: v.distance, image: v.image, priceLevel: v.priceLevel, views: v.viewCount,
     })),
   });
 }

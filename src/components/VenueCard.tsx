@@ -32,6 +32,7 @@ export function VenueCard({ v, t, locale }: { v: VenueListItem; t: T; locale: Lo
             {v.rating !== null ? (<><Stars value={v.rating} size="text-xs" /> <span className="text-stone-500">({v.reviewCount})</span></>) : <span className="text-stone-400">—</span>}
           </span>
           <span className="flex items-center gap-2 text-stone-500">
+            {v.viewCount > 0 && <span title="vues">👁 {v.viewCount}</span>}
             <span>{"DT".repeat(v.priceLevel)}</span>
             {v.distance !== null && <span className="font-semibold text-brand-600">{formatDistance(v.distance)}</span>}
           </span>

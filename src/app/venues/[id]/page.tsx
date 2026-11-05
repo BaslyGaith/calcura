@@ -12,6 +12,7 @@ import { RedeemButton } from "@/components/RedeemButton";
 import { PhotoGallery } from "./PhotoGallery";
 import { VenueActions } from "./VenueActions";
 import { ReviewForm } from "./ReviewForm";
+import { ViewTracker } from "./ViewTracker";
 import type { DictKey } from "@/lib/i18n/dictionaries";
 
 export const dynamic = "force-dynamic";
@@ -57,6 +58,7 @@ export default async function VenuePage({ params }: { params: { id: string } }) 
 
   return (
     <div className="pb-10">
+      <ViewTracker venueId={venue.id} />
       <div className="relative h-56 bg-gradient-to-br from-orange-200 to-amber-100 sm:h-72">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {cover && <img src={cover} alt={venue.name} className="h-full w-full object-cover" />}
@@ -71,6 +73,7 @@ export default async function VenuePage({ params }: { params: { id: string } }) 
           <p className="text-sm text-white/90">
             {[venue.address, venue.city, gov].filter(Boolean).join(", ")}
             {avg !== null && <> · <Stars value={avg} /> {avg.toFixed(1)} ({venue.reviews.length})</>}
+            {" · 👁 "}{t("venue.views", { n: venue.viewCount })}
           </p>
         </div>
       </div>

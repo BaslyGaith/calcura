@@ -42,7 +42,7 @@ export default async function AdminVenues({ searchParams }: { searchParams: { q?
       <p className="text-sm text-stone-500">{t("explore.results", { n: total })}</p>
       <div className="card overflow-x-auto">
         <table className="table-bp min-w-[900px]">
-          <thead><tr><th>{t("common.name")}</th><th>{t("common.governorate")}</th><th>{t("admin.owner")}</th><th>{t("common.status")}</th><th>{t("common.actions")}</th></tr></thead>
+          <thead><tr><th>{t("common.name")}</th><th>{t("common.governorate")}</th><th>{t("admin.views")}</th><th>{t("admin.owner")}</th><th>{t("common.status")}</th><th>{t("common.actions")}</th></tr></thead>
           <tbody>
             {venues.map((v) => (
               <tr key={v.id}>
@@ -51,6 +51,7 @@ export default async function AdminVenues({ searchParams }: { searchParams: { q?
                   <div className="text-xs text-stone-400">{v.source}{v.featured ? " · ⭐" : ""}</div>
                 </td>
                 <td className="text-xs">{v.city ? `${v.city}, ` : ""}{locale === "en" ? v.governorate.nameEn : v.governorate.nameFr}</td>
+                <td className="font-semibold">👁 {v.viewCount}</td>
                 <td>
                   <form action={assignOwner} className="flex gap-1">
                     <input type="hidden" name="id" value={v.id} />

@@ -5,7 +5,9 @@ import { assertUser } from "@/lib/auth";
 import { addPoints } from "@/lib/points";
 import { getSettings } from "@/lib/settings";
 import { playsLeft } from "@/lib/game-limits";
-import { pickQuiz, scoreMemory, scoreQuiz, spinWheel, wheelValues, type GameId } from "@/lib/games";
+import { scoreMemory, scoreQuiz, spinWheel, wheelValues, type GameId } from "@/lib/games";
+import { buildQuiz } from "@/lib/quiz-builder";
+import { recordView } from "@/lib/views";
 import { decryptData, encryptData, signData, verifyData } from "@/lib/session";
 import { getT } from "@/lib/i18n/server";
 
@@ -32,7 +34,9 @@ export async function startQuiz() {
   const g = await guard("QUIZ");
   if (!g.ok) return g;
   const { locale } = getT();
-  const { questions, key } = pickQuiz(locale);
+  const { questions, key } = await buildQuiz(locale);
+  // Chaque établissement affiché dans le quiz gagne une impression (statistique de visibilité).
+  await Promise.all(questions.filter((q) => q.venue).map((q) => recordView(q.venue!.id, g.userId, "QUIZ_SHOWN")));
   // Jeton chiffré : contient la clé de correction, illisible côté client.
   const token = await encryptData({ uid: g.userId, game: "QUIZ", key }, 900);
   return { ok: true as const, token, questions };

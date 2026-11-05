@@ -72,6 +72,7 @@ model Venue {
   source        String      @default("MERCHANT")
   osmId         String?     @unique
   featured      Boolean     @default(false)
+  viewCount     Int         @default(0) // vues uniques de la fiche (1 par visiteur et par jour)
   governorateId String
   governorate   Governorate @relation(fields: [governorateId], references: [id])
   ownerId       String?
@@ -84,6 +85,7 @@ model Venue {
   offers    Offer[]
   reviews   Review[]
   favorites Favorite[]
+  views     VenueView[]
 
   @@index([governorateId, type, status])
 }
@@ -207,4 +209,20 @@ model Favorite {
 model Setting {
   key   String @id
   value String
+}
+
+/// Statistiques de visibilité, dédoublonnées par visiteur, jour et source.
+/// source: PAGE (fiche consultée) | QUIZ_SHOWN (affiché dans une question du quiz)
+///       | QUIZ_CLICK (fiche ouverte depuis le quiz)
+model VenueView {
+  id        String   @id @default(cuid())
+  venueId   String
+  venue     Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  visitorId String // id utilisateur ou identifiant anonyme (cookie)
+  day       String // AAAA-MM-JJ
+  source    String
+  createdAt DateTime @default(now())
+
+  @@unique([venueId, visitorId, day, source])
+  @@index([venueId, source, day])
 }
